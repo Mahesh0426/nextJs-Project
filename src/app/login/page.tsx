@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 type User = {
   email: string;
@@ -13,14 +15,11 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
-
-  //   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //     setUser({ ...user, [e.target.name]: e.target.value });
-  //   };
+  const [loading, setLoading] = React.useState(false);
+  const router = useRouter();
 
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
     // tell TS that `name` is one of the keys of User
     setUser((prev) => ({
       ...prev,
@@ -28,8 +27,26 @@ const LoginPage = () => {
     }));
   };
 
-  const onLogin = async () => {
-    //signup logic here
+  const onLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/users/login", user);
+      console.log("login success", response.data);
+      toast.success("Login successful!");
+      router.push("/profile");
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        // if backend sent an error response
+        const message = error.response?.data?.error || "Something went wrong";
+        toast.error(message);
+      } else {
+        toast.error("Unexpected error. Please try again.");
+      }
+      console.error("login failed", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,7 +55,7 @@ const LoginPage = () => {
         <h1 className="text-2xl font-bold text-center text-black mb-6">
           Login
         </h1>
-        <form onClick={onLogin} className="flex flex-col space-y-4">
+        <form onSubmit={onLogin} className="flex flex-col space-y-4">
           <div>
             <label
               htmlFor="email"
@@ -53,7 +70,7 @@ const LoginPage = () => {
               placeholder="Enter your email"
               value={user.email}
               onChange={handleOnChange}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-black"
             />
           </div>
 
@@ -71,15 +88,16 @@ const LoginPage = () => {
               placeholder="Enter your password"
               value={user.password}
               onChange={handleOnChange}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-black"
             />
           </div>
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Sign Up
+            {loading ? "Loading..." : "Login"}
           </button>
 
           <p className="text-sm text-gray-600 text-center">
